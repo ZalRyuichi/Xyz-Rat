@@ -1,1 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>XYZXRAT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
+    :root {
+      --bg:    #03080f;
+      --s:     #060d18;
+      --c:     #091220;
+      --b:     #132035;
+      --b2:    #1a2d47;
+      --cyan:  #22d3ee;
+      --blue:  #3b82f6;
+      --blue2: #60a5fa;
+      --red:   #f87171;
+      --amber: #fbbf24;
+      --white: #f0f6ff;
+      --t:     #d4e8ff;
+      --t2:    #4a6a90;
+      --mono:  'Share Tech Mono', monospace;
+      --head:  'Orbitron', sans-serif;
+      --title: 'Rajdhani', sans-serif;
+    }
+
+    html, body {
+      width:100%; min-height:100vh;
+      background: var(--bg);
+      font-family: var(--mono);
+      color: var(--t);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .bg-layer { position:fixed; inset:0; z-index:0; pointer-events:none; }
+    .bg-gradient {
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 110%, rgba(0,80,180,0.20) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 15% 10%,  rgba(0,180,255,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 85% 80%,  rgba(34,211,238,0.04) 0%, transparent 60%),
+        var(--bg);
+    }
+    .bg-grid {
+      background-image:
+        linear-gradient(rgba(0,200,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,0.035) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .bg-diagonal {
+      background: repeating-linear-gradient(
+        -52deg, transparent 0px, transparent 100px,
+        rgba(0,150,255,0.018) 100px, rgba(0,150,255,0.018) 101px
+      );
+    }
+    .bg-noise {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px; opacity:.022;
+    }
+    .bg-vignette {
+      background: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%);
+    }
+
+    .scanline {
+      position:fixed; left:0; right:0; height:3px; z-index:1; pointer-events:none;
+      background: linear-gradient(90deg, transparent, rgba(34,211,238,0.13), transparent);
+      animation: scan 9s linear infinite;
+    }
+    @keyframes scan { 0%{top:-3px} 100%{top:100vh} }
+
+    .hud { position:fixed; width:44px; height:44px; z-index:2; pointer-events:none; border-color:rgba(34,211,238,0.22); border-style:solid; }
+    .hud-tl { top:14px; left:14px;  border-width:2px 0 0 2px; }
+    .hud-tr { top:14px; right:14px; border-width:2px 2px 0 0; }
+    .hud-bl { bottom:14px; left:14px;  border-width:0 0 2px 2px; }
+    .hud-br { bottom:14px; right:14px; border-width:0 2px 2px 0; }
+
+    .topbar {
+      position:fixed; top:0; left:0; right:0; height:44px; z-index:10;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 60px;
+      background: linear-gradient(180deg, rgba(3,8,15,0.95) 0%, rgba(3,8,15,0) 100%);
+      backdrop-filter: blur(2px);
+    }
+    .topbar-logo {
+      font-family: var(--title); font-size:15px; letter-spacing:4px;
+      color:var(--cyan); text-shadow:0 0 12px rgba(34,211,238,0.5); opacity:.85;
+    }
+    .topbar-tag { font-size:9px; letter-spacing:3px; color:var(--t2); text-transform:uppercase; }
+
+    #pbar {
+      position:fixed; top:0; left:0; height:2px; z-index:99;
+      background: linear-gradient(90deg, var(--amber), rgba(251,191,36,0.4));
+      box-shadow: 0 0 10px rgba(251,191,36,0.8), 0 0 20px rgba(251,191,36,0.3);
+      width: 55%; animation: errPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes errPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .particles { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+    .p {
+      position:absolute; border-radius:50%;
+      background:var(--amber); opacity:0;
+      animation: rise var(--t,10s) linear var(--d,0s) infinite;
+    }
+    @keyframes rise {
+      0%   { transform:translateY(105vh) scale(0); opacity:0; }
+      8%   { opacity:0.4; }
+      92%  { opacity:0.12; }
+      100% { transform:translateY(-5vh) scale(1.8); opacity:0; }
+    }
+
+    .stage {
+      position:relative; z-index:3; min-height:100vh;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      padding:80px 24px 60px;
+    }
+
+    /* ── Server icon ── */
+    .server-wrap {
+      position:relative; width:130px; height:130px;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom: 32px;
+      animation: floatUp 4s ease-in-out infinite;
+    }
+    @keyframes floatUp { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+    .server-ring {
+      position:absolute; border-radius:50%;
+      border:1px solid rgba(251,191,36,0.2);
+      animation: ringExpand 2.8s ease-out infinite;
+    }
+    .server-ring:nth-child(1) { width:82px;  height:82px;  animation-delay:0s;   border-color:rgba(251,191,36,0.32); }
+    .server-ring:nth-child(2) { width:106px; height:106px; animation-delay:0.7s; border-color:rgba(251,191,36,0.18); }
+    .server-ring:nth-child(3) { width:130px; height:130px; animation-delay:1.4s; border-color:rgba(251,191,36,0.08); }
+    @keyframes ringExpand {
+      0%  { transform:scale(0.72); opacity:1; }
+      70% { opacity:0.4; }
+      100%{ transform:scale(1.12); opacity:0; }
+    }
+
+    .server-icon {
+      position:relative; z-index:1;
+      width:62px; height:62px;
+      background: rgba(248,113,113,0.07);
+      border: 1px solid rgba(248,113,113,0.3);
+      border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:
+        0 0 24px rgba(248,113,113,0.15),
+        0 0 60px rgba(248,113,113,0.05),
+        inset 0 0 20px rgba(248,113,113,0.04);
+    }
+    .server-icon svg {
+      width:30px; height:30px;
+      animation: iconBlink 2.8s ease-in-out infinite;
+    }
+    @keyframes iconBlink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    /* ── Badge ── */
+    .err-badge {
+      display:flex; align-items:center; gap:8px;
+      background: rgba(251,191,36,0.07);
+      border: 1px solid rgba(251,191,36,0.22);
+      border-radius:100px; padding:5px 14px; margin-bottom:22px;
+      font-size:10px; letter-spacing:3px; color:var(--amber);
+      text-transform:uppercase;
+      box-shadow: 0 0 16px rgba(251,191,36,0.08);
+      animation: badgeFade 1.5s ease both;
+    }
+    .err-dot {
+      width:6px; height:6px; border-radius:50%;
+      background:var(--amber); box-shadow:0 0 6px var(--amber);
+      animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes dotPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:0.6} }
+    @keyframes badgeFade { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+    .main-title {
+      font-family: var(--head);
+      font-size: clamp(22px, 6vw, 40px);
+      font-weight:700; letter-spacing:2px; text-align:center;
+      color:var(--white);
+      text-shadow:0 0 30px rgba(251,191,36,0.2), 0 2px 20px rgba(0,0,0,0.6);
+      margin-bottom:12px;
+      animation: textReveal 0.8s ease 0.2s both;
+    }
+    .sub-title {
+      font-size:11px; letter-spacing:5px; color:var(--t2);
+      text-transform:uppercase; text-align:center; margin-bottom:36px;
+      animation: textReveal 0.8s ease 0.35s both;
+    }
+    @keyframes textReveal { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── Status card ── */
+    .status-card {
+      width:100%; max-width:380px;
+      background: rgba(9,18,32,0.7);
+      border: 1px solid rgba(251,191,36,0.1);
+      border-radius:16px; padding:24px;
+      backdrop-filter:blur(20px);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.4),
+        0 20px 60px rgba(0,0,0,0.5),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+      margin-bottom:28px;
+      animation: textReveal 0.8s ease 0.5s both;
+    }
+    .status-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:11px 0;
+      border-bottom:1px solid rgba(251,191,36,0.07);
+    }
+    .status-row:last-child { border-bottom:none; }
+    .status-label {
+      font-size:10px; letter-spacing:2px; color:var(--t2);
+      text-transform:uppercase; display:flex; align-items:center; gap:8px;
+    }
+    .status-label svg { width:13px; height:13px; stroke:var(--t2); opacity:.7; }
+    .status-val { font-size:11px; letter-spacing:1px; font-family:var(--mono); }
+    .status-val.err  { color:var(--red);   text-shadow:0 0 8px rgba(248,113,113,0.5); }
+    .status-val.warn { color:var(--amber); text-shadow:0 0 8px rgba(251,191,36,0.4); }
+    .status-val.ok   { color:#34d399;      text-shadow:0 0 8px rgba(52,211,153,0.4); }
+
+    /* ── Progress bar maintenance ── */
+    .maint-progress {
+      width:100%; max-width:380px;
+      margin-bottom:28px;
+      animation: textReveal 0.8s ease 0.6s both;
+    }
+    .maint-label {
+      display:flex; justify-content:space-between; align-items:center;
+      font-size:9px; letter-spacing:2px; color:var(--t2);
+      text-transform:uppercase; margin-bottom:8px;
+    }
+    .maint-label span { color:var(--amber); }
+    .maint-track {
+      width:100%; height:4px;
+      background: rgba(251,191,36,0.1);
+      border-radius:100px; overflow:hidden;
+      border: 1px solid rgba(251,191,36,0.12);
+    }
+    .maint-fill {
+      height:100%; width:0%;
+      background: linear-gradient(90deg, rgba(251,191,36,0.5), var(--amber));
+      border-radius:100px;
+      box-shadow: 0 0 8px rgba(251,191,36,0.5);
+      animation: fillProgress 3s cubic-bezier(.4,0,.2,1) 1.2s forwards;
+    }
+    @keyframes fillProgress { to{width:68%} }
+
+    .desc {
+      max-width:320px; text-align:center;
+      font-size:12px; line-height:1.9; color:var(--t2);
+      margin-bottom:36px;
+      animation: textReveal 0.8s ease 0.65s both;
+    }
+    .desc span { color:var(--cyan); text-shadow:0 0 8px rgba(34,211,238,0.4); }
+    .desc span.hi { color:var(--amber); text-shadow:0 0 8px rgba(251,191,36,0.4); }
+
+    /* ── Button ── */
+    .btn-retry {
+      position:relative;
+      display:flex; align-items:center; gap:10px;
+      padding:13px 32px;
+      background: rgba(251,191,36,0.06);
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius:10px;
+      font-family:var(--mono); font-size:11px;
+      letter-spacing:3px; text-transform:uppercase;
+      color:var(--amber); cursor:pointer; overflow:hidden;
+      transition: all 0.25s ease;
+      animation: textReveal 0.8s ease 0.8s both;
+      box-shadow: 0 0 20px rgba(251,191,36,0.06);
+    }
+    .btn-retry:hover {
+      background: rgba(251,191,36,0.12);
+      border-color: rgba(251,191,36,0.55);
+      box-shadow: 0 0 30px rgba(251,191,36,0.18), 0 0 60px rgba(251,191,36,0.06);
+      transform:translateY(-1px);
+    }
+    .btn-retry:active { transform:scale(0.97) translateY(0); }
+    .btn-retry svg { width:15px; height:15px; stroke:var(--amber); }
+    .btn-retry.loading svg { animation:spin 0.8s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .btn-ripple {
+      position:absolute; inset:0;
+      background: linear-gradient(90deg, transparent, rgba(251,191,36,0.08), transparent);
+      transform:translateX(-100%);
+      animation: ripple 3.2s ease-in-out 1.5s infinite;
+    }
+    @keyframes ripple { 0%{transform:translateX(-100%)} 40%{transform:translateX(100%)} 100%{transform:translateX(100%)} }
+
+    .code-strip {
+      margin-top:44px;
+      display:flex; flex-direction:column; align-items:center; gap:4px;
+      animation: textReveal 0.8s ease 1s both;
+    }
+    .code-line { font-size:9px; letter-spacing:2px; color:rgba(74,106,144,0.4); font-family:var(--mono); }
+    .code-line .hl  { color:rgba(34,211,238,0.32); }
+    .code-line .hl2 { color:rgba(251,191,36,0.38); }
+
+    .ver-tag {
+      position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+      font-size:9px; letter-spacing:4px; color:rgba(34,211,238,0.2);
+      z-index:2; pointer-events:none; white-space:nowrap;
+    }
+
+    /* ── Toast ── */
+    .toast-wrap {
+      position:fixed; top:20px; right:16px; z-index:9999;
+      display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+      width:calc(100% - 32px); max-width:300px; pointer-events:none;
+    }
+    .toast {
+      width:100%; background:rgba(6,13,24,0.97);
+      border-radius:12px; padding:11px 14px;
+      font-size:10px; letter-spacing:.4px;
+      display:flex; align-items:center; gap:10px;
+      animation: toastIn .25s cubic-bezier(.34,1.56,.64,1) both;
+      backdrop-filter:blur(28px); position:relative; overflow:hidden;
+      border:1px solid rgba(251,191,36,0.18);
+      box-shadow:0 8px 32px rgba(0,0,0,.8), 0 0 16px rgba(251,191,36,0.06);
+    }
+    .toast::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; background:var(--amber); box-shadow:0 0 8px var(--amber); }
+    @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+  </style>
+</head>
+<body>
+
+  <div class="bg-layer bg-gradient"></div>
+  <div class="bg-layer bg-grid"></div>
+  <div class="bg-layer bg-diagonal"></div>
+  <div class="bg-layer bg-noise"></div>
+  <div class="bg-layer bg-vignette"></div>
+
+  <div class="scanline"></div>
+
+  <div class="hud hud-tl"></div>
+  <div class="hud hud-tr"></div>
+  <div class="hud hud-bl"></div>
+  <div class="hud hud-br"></div>
+
+  <div id="pbar"></div>
+  <div class="particles" id="pts"></div>
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <main class="stage">
+
+    <!-- Server icon -->
+    <div class="server-wrap">
+      <div class="server-ring"></div>
+      <div class="server-ring"></div>
+      <div class="server-ring"></div>
+      <div class="server-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--red);filter:drop-shadow(0 0 6px rgba(248,113,113,0.7))">
+          <line x1="1" y1="1" x2="23" y2="23"/>
+          <path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/>
+          <path d="M5 12.55a10.94 10.94 0 015.17-2.39"/>
+          <path d="M10.71 5.05A16 16 0 0122.56 9"/>
+          <path d="M1.42 9a15.91 15.91 0 014.7-2.88"/>
+          <path d="M8.53 16.11a6 6 0 016.95 0"/>
+          <circle cx="12" cy="20" r="1" fill="var(--red)" stroke="none"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Badge -->
+    <div class="err-badge">
+      <div class="err-dot"></div>
+      <span>Server Offline</span>
+    </div>
+
+    <!-- Titles -->
+    <h1 class="main-title">Aplikasi Sedang Offline</h1>
+    <p class="sub-title">Server Tidak Dapat Dijangkau</p>
+
+    <!-- Status card -->
+    <div class="status-card">
+      <div class="status-row">
+        <span class="status-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          App Server
+        </span>
+        <span class="status-val err">OFFLINE</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Database
+        </span>
+        <span class="status-val err">UNREACHABLE</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+          </svg>
+          Maintenance
+        </span>
+        <span class="status-val warn">IN PROGRESS</span>
+      </div>
+      </div>
+    </div>
+
+    <!-- Maintenance progress -->
+    <div class="maint-progress">
+      <div class="maint-label">
+        <span>Progress Maintenance</span>
+        <span id="pctVal">0%</span>
+      </div>
+      <div class="maint-track">
+        <div class="maint-fill" id="maintFill"></div>
+      </div>
+    </div>
+
+    <!-- Retry button -->
+    <button class="btn-retry" id="retryBtn" onclick="doRetry()">
+      <div class="btn-ripple"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="retryIcon">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+      </svg>
+      <span id="retryText">Cek Ulang Server</span>
+    </button>
+
+    <!-- Code decoration -->
+    <div class="code-strip">
+      <div class="code-line"><span class="hl2">ERR_APP_SERVER_OFFLINE</span></div>
+    </div>
+
+  </main>
+
+  <script>
+    // Particles
+    (function(){
+      const c=document.getElementById('pts');
+      for(let i=0;i<24;i++){
+        const p=document.createElement('div'); p.className='p';
+        const sz=Math.random()*1.5+0.8;
+        p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;--t:${8+Math.random()*10}s;--d:${-Math.random()*10}s;`;
+        c.appendChild(p);
+      }
+    })();
+
+    // Animate progress pct label
+    (function(){
+      let v=0;
+      const el=document.getElementById('pctVal');
+      const iv=setInterval(()=>{
+        v+=2; el.textContent=v+'%';
+        if(v>=68) clearInterval(iv);
+      }, 60);
+    })();
+
+    // Retry
+    let retries=0;
+    function doRetry(){
+      const btn=document.getElementById('retryBtn');
+      const txt=document.getElementById('retryText');
+      btn.classList.add('loading'); btn.disabled=true;
+      txt.textContent='Memeriksa...';
+      setTimeout(()=>{
+        retries++;
+        btn.classList.remove('loading'); btn.disabled=false;
+        txt.textContent='Cek Ulang Server';
+        showToast();
+      }, 2000);
+    }
+
+    function showToast(){
+      const w=document.getElementById('toastWrap');
+      const t=document.createElement('div'); t.className='toast';
+      t.innerHTML=`
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>Server Masih Offline.</span>
+      `;
+      w.appendChild(t);
+      setTimeout(()=>t.remove(), 3500);
+    }
+  </script>
+</body>
+    </html>
+    
