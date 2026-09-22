@@ -1,1 +1,1 @@
-https://keys-designer-contributors-willow.trycloudflare.com
+https://api.trycloudflare.com
