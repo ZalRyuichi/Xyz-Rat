@@ -1,1 +1,1 @@
-https://tri-eds-dan-plant.trycloudflare.com
+https://api.trycloudflare.com
